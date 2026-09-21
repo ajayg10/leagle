@@ -1,0 +1,223 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --leagle-bg: #050709;
+    --leagle-navy: #0F141A;
+    --leagle-accent: #C5A059;
+    --leagle-gold: #C5A059;
+    --leagle-glass: rgba(10, 15, 20, 0.9);
+    --leagle-border: rgba(197, 160, 89, 0.15);
+
+    color-scheme: dark;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--leagle-bg);
+    color: #f3f4f6;
+    margin: 0;
+    padding: 0;
+    min-height: 100dvh;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+
+  @keyframes cm-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.35;
+    }
+  }
+}
+
+@layer components {
+  .glass-card {
+    background-color: var(--leagle-glass);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--leagle-border);
+    border-radius: 0.125rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, var(--leagle-accent), #ffffff);
+  }
+
+  .btn-premium {
+    padding: 0.625rem 1.5rem;
+    background-color: var(--leagle-accent);
+    color: #000;
+    font-weight: 700;
+    border-radius: 0.125rem;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.15);
+  }
+
+  .btn-premium:hover {
+    box-shadow: 0 6px 16px rgba(197, 160, 89, 0.25);
+    transform: translateY(-1px);
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.125rem;
+    transition: all 0.2s;
+    font-weight: 500;
+    color: #9ca3af;
+    text-decoration: none;
+  }
+
+  .nav-link:hover {
+    background-color: rgba(197, 160, 89, 0.05);
+    color: white;
+  }
+
+  .nav-link-active {
+    background-color: rgba(197, 160, 89, 0.08);
+    color: #f3f4f6;
+  }
+
+  .cm-shell-bg {
+    background-color: var(--leagle-bg);
+  }
+
+  .cm-shell-header {
+    height: 68px;
+    background: rgba(10, 15, 20, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--leagle-border);
+  }
+
+  .cm-shell-frame {
+    display: contents;
+    /* Removed frame logic */
+  }
+
+  /* Legacy styles removed for Institutional Premium */
+
+  .cm-nav-item {
+    width: 100%;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 11px 0;
+    border-left: 2.5px solid transparent;
+    transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    font-family: inherit;
+    text-decoration: none;
+  }
+
+  .cm-nav-item.active {
+    background: rgba(197, 160, 89, 0.1);
+    border-left-color: var(--leagle-accent);
+  }
+
+  .cm-nav-item.active svg {
+    filter: drop-shadow(0 0 6px rgba(197, 160, 89, 0.65));
+  }
+
+  .cm-nav-item:not(.active) {
+    opacity: 0.48;
+  }
+
+  .cm-nav-item:not(.active):hover {
+    opacity: 0.82;
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+@layer utilities {
+  /* ✅ Override Tailwind white colors with accent */
+  .text-leagle-accent,
+  .text-accent {
+    color: var(--leagle-accent);
+  }
+
+  .bg-leagle-accent {
+    background-color: var(--leagle-accent);
+  }
+
+  .border-leagle-accent {
+    border-color: var(--leagle-accent);
+  }
+
+  .shadow-leagle-accent {
+    box-shadow: 0 0 20px rgba(197, 160, 89, 0.3);
+  }
+
+  /* Fix text-gradient to use proper text color */
+  .text-gradient {
+    background: linear-gradient(to right, var(--leagle-accent), #ffffff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--leagle-accent);
+  }
+
+  /* Ensure span with text-leagle-accent uses the right color */
+  span.text-leagle-accent {
+    color: var(--leagle-accent) !important;
+  }
+
+  /* Fix any .bg-mesh references */
+  .bg-mesh {
+    background: var(--leagle-bg);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--leagle-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}

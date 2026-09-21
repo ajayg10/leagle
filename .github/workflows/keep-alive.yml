@@ -1,0 +1,61 @@
+name: Keep Alive Services
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-backend:
+    name: Ping Hugging Face Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check backend health
+        env:
+          BACKEND_URL: ${{ secrets.HF_BACKEND_URL }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${BACKEND_URL:-}" ]]; then
+            echo "HF_BACKEND_URL secret is not set."
+            exit 1
+          fi
+
+          endpoint="${BACKEND_URL%/}/health"
+          echo "Pinging ${endpoint}"
+
+          response_file=$(mktemp)
+          curl --fail --silent --show-error --max-time 30 "${endpoint}" --output "${response_file}"
+          cat "${response_file}"
+
+  ping-qdrant:
+    name: Ping Qdrant Cloud
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Qdrant health
+        env:
+          QDRANT_URL: ${{ secrets.QDRANT_URL }}
+          QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${QDRANT_URL:-}" ]]; then
+            echo "QDRANT_URL secret is not set."
+            exit 1
+          fi
+
+          endpoint="${QDRANT_URL%/}/readyz"
+          echo "Pinging ${endpoint}"
+
+          response_file=$(mktemp)
+
+          if [[ -n "${QDRANT_API_KEY:-}" ]]; then
+            curl --fail --silent --show-error --max-time 30 \
+              -H "api-key: ${QDRANT_API_KEY}" \
+              "${endpoint}" --output "${response_file}"
+          else
+            curl --fail --silent --show-error --max-time 30 \
+              "${endpoint}" --output "${response_file}"
+          fi
+
+          cat "${response_file}"
