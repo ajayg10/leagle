@@ -66,6 +66,7 @@ engine = create_async_engine(
     max_overflow=10,
     pool_pre_ping=True,  # Detect stale connections
     pool_recycle=3600,  # Recycle connections every hour
+    connect_args={"timeout": 10},  # Prevent infinite hangs connecting
 )
 
 # Async session factory
@@ -91,17 +92,23 @@ async def get_db() -> AsyncSession:
             await session.close()
 
 
+import asyncio
+
 async def create_tables():
     """
     Create all tables in the database.
     Call this during application startup.
     """
     try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("✅ Database tables created/verified")
+        logger.info("DB init started...")
+        async def _do_create():
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+                
+        await asyncio.wait_for(_do_create(), timeout=20.0)
+        logger.info("✅ DB init finished: tables created/verified")
     except Exception as e:
-        logger.warning(f"⚠️ Could not create database tables on startup: {e}")
+        logger.error(f"⚠️ DB init failed: Could not create database tables on startup: {e}")
         logger.warning("⚠️ If database is not available, table creation will be deferred")
         # Don't re-raise - allow app to start even if DB is unavailable
 

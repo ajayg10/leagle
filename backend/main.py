@@ -19,6 +19,8 @@ from core.scheduler import start_scheduler, stop_scheduler
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import asyncio
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Run on startup and shutdown."""
@@ -30,9 +32,15 @@ async def lifespan(app: FastAPI):
                 "Copy .env.example and fill in your Clerk domain."
             )
 
-    logger.info("Starting up...")
-    await create_tables()
-    ensure_collection_exists()
+    port = os.getenv("PORT", "8000")
+    logger.info(f"starting on port {port}")
+    
+    # Run heavy startup tasks in background to allow Uvicorn to bind the port immediately
+    async def startup_tasks():
+        await create_tables()
+        await asyncio.to_thread(ensure_collection_exists)
+        
+    asyncio.create_task(startup_tasks())
     
     # Export tokens for external libraries
     if settings.hf_token:
@@ -123,9 +131,22 @@ if settings.enable_whatsapp:
 # External public API — uses its own X-Protocol-Key mechanism
 app.include_router(public_api_router, prefix="/api/v1/neural", tags=["public-api"])
 
+from sqlalchemy import text
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "version": "1.0.0"}
+
+@app.get("/health/db")
+async def health_check_db(db: AsyncSession = Depends(get_db)):
+    """Check database connection explicitly."""
+    try:
+        await asyncio.wait_for(db.execute(text("SELECT 1")), timeout=5.0)
+        return {"status": "ok", "db": "connected"}
+    except Exception as e:
+        from fastapi import HTTPException
+        logger.error(f"Health check DB connection failed: {e}")
+        raise HTTPException(status_code=503, detail="Database connection failed")
 
 if __name__ == "__main__":
     import uvicorn
