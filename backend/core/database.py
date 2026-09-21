@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.engine.url import make_url
 from core.config import settings
 import logging
-from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
 logger = logging.getLogger(__name__)
 
@@ -12,33 +12,52 @@ class Base(DeclarativeBase):
     pass
 
 
-def _normalize_database_url(database_url: str) -> str:
+def get_async_database_url(url_str: str) -> str:
     """
-    Normalize PostgreSQL async URLs for SQLAlchemy + asyncpg.
-    Neon URLs often use sslmode=require, while asyncpg expects ssl.
+    Normalize database URLs for SQLAlchemy + asyncpg/aiosqlite.
+    Handles Render's postgres:// and Neon's sslmode=require.
     """
-    if not database_url.startswith("postgresql+asyncpg://"):
-        return database_url
+    if not url_str:
+        raise ValueError("DATABASE_URL is not set or empty")
+    
+    parsed_url = make_url(url_str)
+    
+    # Map synchronous schemes to async dialects
+    if parsed_url.drivername in ("postgres", "postgresql"):
+        parsed_url = parsed_url.set(drivername="postgresql+asyncpg")
+    elif parsed_url.drivername == "sqlite":
+        parsed_url = parsed_url.set(drivername="sqlite+aiosqlite")
+    elif parsed_url.drivername not in ("postgresql+asyncpg", "sqlite+aiosqlite"):
+        raise ValueError(f"Unsupported database scheme: {parsed_url.drivername}")
+        
+    # Translate sslmode=... to ssl=... for asyncpg compatibility
+    if parsed_url.drivername == "postgresql+asyncpg":
+        query = dict(parsed_url.query)
+        if "sslmode" in query:
+            sslmode = query.pop("sslmode")
+            if sslmode == "require":
+                query["ssl"] = "require"
+            parsed_url = parsed_url.set(query=query)
 
-    parsed = urlparse(database_url)
-    query_params = dict(parse_qsl(parsed.query, keep_blank_values=True))
-
-    if "sslmode" in query_params and "ssl" not in query_params:
-        query_params["ssl"] = query_params.pop("sslmode")
-
-    normalized_query = urlencode(query_params)
-    return urlunparse(parsed._replace(query=normalized_query))
+    return parsed_url.render_as_string(hide_password=False)
 
 
-normalized_database_url = _normalize_database_url(settings.database_url)
+def get_masked_url(url_str: str) -> str:
+    """Return a safely masked database URL for logging."""
+    if not url_str:
+        return ""
+    try:
+        return make_url(url_str).render_as_string(hide_password=True)
+    except Exception:
+        return "***"
+
+
+normalized_database_url = get_async_database_url(settings.database_url)
 
 
 # Create async engine with proper configuration for Neon/PostgreSQL
 # Note: asyncpg driver is required for async operations on Neon
-logger.info(f"Connecting to database... (normalized URL length: {len(normalized_database_url)})")
-if normalized_database_url:
-    safe_url = normalized_database_url.split('@')[-1] if '@' in normalized_database_url else normalized_database_url
-    logger.info(f"Database target: {safe_url}")
+logger.info(f"Connecting to database at {get_masked_url(normalized_database_url)}")
 
 engine = create_async_engine(
     normalized_database_url,

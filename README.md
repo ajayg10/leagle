@@ -167,6 +167,8 @@ Create a `.env` file in the project root:
 
 ```env
 DATABASE_URL=postgresql+asyncpg://user:password@127.0.0.1/compliance_db
+# Note: If your provider (like Render or Neon) gives you a postgres:// or postgresql:// URL, 
+# the backend will automatically convert it to postgresql+asyncpg:// for you.
 QDRANT_HOST=127.0.0.1
 QDRANT_PORT=6333
 REDIS_URL=redis://127.0.0.1:6379/0
