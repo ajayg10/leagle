@@ -1,4 +1,3 @@
-from sentence_transformers import SentenceTransformer
 import logging
 import numpy as np
 from typing import List, Dict
@@ -13,6 +12,7 @@ def get_model():
     """Get or create embedding model with lazy initialization."""
     global _model
     if _model is None:
+        from sentence_transformers import SentenceTransformer
         logger.info("Loading SentenceTransformer model (all-MiniLM-L6-v2)...")
         _model = SentenceTransformer("all-MiniLM-L6-v2")
         logger.info("✅ Embedding model loaded successfully")

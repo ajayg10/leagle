@@ -20,7 +20,6 @@ from qdrant_client.models import (
     FieldCondition,
     MatchValue,
 )
-from sentence_transformers import SentenceTransformer
 from core.config import settings
 import uuid
 import logging
@@ -41,7 +40,7 @@ COLLECTION_NAME = settings.qdrant_collection  # "regulations_v1"
 # ─────────────────────────────────────────────────────────────────────────────
 
 _qdrant_client: QdrantClient | None = None
-_embedding_model: SentenceTransformer | None = None
+_embedding_model: Any | None = None
 
 
 def get_qdrant_client() -> QdrantClient:
@@ -63,10 +62,11 @@ def get_qdrant_client() -> QdrantClient:
     return _qdrant_client
 
 
-def get_embedding_model() -> SentenceTransformer:
+def get_embedding_model() -> Any:
     """Load embedding model once and reuse"""
     global _embedding_model
     if _embedding_model is None:
+        from sentence_transformers import SentenceTransformer
         logger.info(f"Loading embedding model: {EMBEDDING_MODEL}")
         _embedding_model = SentenceTransformer(EMBEDDING_MODEL)
     return _embedding_model
