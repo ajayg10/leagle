@@ -14,7 +14,7 @@ class Base(DeclarativeBase):
 
 def get_async_database_url(url_str: str) -> str:
     """
-    Normalize database URLs for SQLAlchemy + asyncpg/aiosqlite.
+    Normalize database URLs for SQLAlchemy + psycopg/aiosqlite.
     Handles Render's postgres:// and Neon's sslmode=require.
     """
     if not url_str:
@@ -24,21 +24,12 @@ def get_async_database_url(url_str: str) -> str:
     
     # Map synchronous schemes to async dialects
     if parsed_url.drivername in ("postgres", "postgresql"):
-        parsed_url = parsed_url.set(drivername="postgresql+asyncpg")
+        parsed_url = parsed_url.set(drivername="postgresql+psycopg")
     elif parsed_url.drivername == "sqlite":
         parsed_url = parsed_url.set(drivername="sqlite+aiosqlite")
-    elif parsed_url.drivername not in ("postgresql+asyncpg", "sqlite+aiosqlite"):
+    elif parsed_url.drivername not in ("postgresql+psycopg", "sqlite+aiosqlite"):
         raise ValueError(f"Unsupported database scheme: {parsed_url.drivername}")
         
-    # Translate sslmode=... to ssl=... for asyncpg compatibility
-    if parsed_url.drivername == "postgresql+asyncpg":
-        query = dict(parsed_url.query)
-        if "sslmode" in query:
-            sslmode = query.pop("sslmode")
-            if sslmode == "require":
-                query["ssl"] = "require"
-            parsed_url = parsed_url.set(query=query)
-
     return parsed_url.render_as_string(hide_password=False)
 
 
@@ -56,7 +47,7 @@ normalized_database_url = get_async_database_url(settings.database_url)
 
 
 # Create async engine with proper configuration for Neon/PostgreSQL
-# Note: asyncpg driver is required for async operations on Neon
+# Note: psycopg driver is required for async operations on Neon
 logger.info(f"Connecting to database at {get_masked_url(normalized_database_url)}")
 
 engine = create_async_engine(

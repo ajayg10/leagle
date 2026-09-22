@@ -8,7 +8,7 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.13.0
 APScheduler==3.11.2
-asyncpg==0.31.0
+
 attrs==26.1.0
 beautifulsoup4==4.14.3
 bidict==0.23.1
@@ -114,8 +114,7 @@ prompt_toolkit==3.0.52
 propcache==0.4.1
 proto-plus==1.27.2
 protobuf==5.29.6
-psycopg==3.3.3
-psycopg-binary==3.3.3
+psycopg[binary,pool]==3.3.3
 pyarrow==23.0.1
 pyasn1==0.6.3
 pyasn1_modules==0.4.2

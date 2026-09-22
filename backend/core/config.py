@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
     # Database
-    database_url: str = "postgresql+asyncpg://user:password@localhost/compliance_db"
+    database_url: str = "postgresql+psycopg://user:password@localhost/compliance_db"
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_whatsapp_number: str = ""
