@@ -6,10 +6,6 @@ export default clerkMiddleware(async (auth, request) => {
     if (!isPublicRoute(request)) {
         await auth.protect();
     }
-}, {
-    authorizedParties: process.env.NODE_ENV === 'production'
-        ? ['https://leagle.pradeepto.qzz.io', 'http://localhost:3000']
-        : undefined
 });
 
 export const config = {
