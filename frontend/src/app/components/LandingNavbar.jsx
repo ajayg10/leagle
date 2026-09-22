@@ -52,12 +52,12 @@ export default function LandingNavbar() {
                 {/* Right: auth buttons + hamburger */}
                 <div className="flex items-center gap-3 sm:gap-4">
                     <Show when="signed-out">
-                        <SignInButton mode="modal">
+                        <SignInButton>
                             <button className="hidden sm:block text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white px-3 transition-colors cursor-pointer min-h-[44px]">
                                 Sign In
                             </button>
                         </SignInButton>
-                        <SignUpButton mode="modal">
+                        <SignUpButton>
                             <button className="btn-premium px-4 sm:px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer min-h-[44px]">
                                 Access Hub
                             </button>
@@ -119,7 +119,7 @@ export default function LandingNavbar() {
                         </Link>
                     </Show>
                     <Show when="signed-out">
-                        <SignInButton mode="modal">
+                        <SignInButton>
                             <button
                                 onClick={() => setMobileOpen(false)}
                                 className="w-full mt-4 py-3 text-sm font-black uppercase tracking-widest text-gray-400 border border-white/10 hover:text-white transition-colors min-h-[44px]"

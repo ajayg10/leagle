@@ -35,7 +35,7 @@ export default function Home() {
                                 </Link>
                             </Show>
                             <Show when="signed-out">
-                                <SignUpButton mode="modal">
+                                <SignUpButton>
                                     <button className="btn-premium px-8 py-4 text-sm sm:text-base group cursor-pointer w-full sm:w-auto min-h-[44px]">
                                         Initialize Scanning
                                         <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
