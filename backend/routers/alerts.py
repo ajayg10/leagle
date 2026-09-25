@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, update
 from core.database import get_db
+from core.auth import get_current_user
 from models.alert import Alert
 import asyncio
 import json
@@ -30,7 +31,7 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(get_current_user)])
 async def get_alerts(db: AsyncSession = Depends(get_db), limit: int = 50):
     result = await db.execute(
         select(Alert).order_by(desc(Alert.sent_at)).limit(limit)
@@ -45,7 +46,7 @@ async def get_alerts(db: AsyncSession = Depends(get_db), limit: int = 50):
         for a in alerts
     ]
 
-@router.patch("/{alert_id}/acknowledge")
+@router.patch("/{alert_id}/acknowledge", dependencies=[Depends(get_current_user)])
 async def acknowledge_alert(alert_id: str, db: AsyncSession = Depends(get_db)):
     await db.execute(
         update(Alert).where(Alert.id == alert_id).values(acknowledged=True)

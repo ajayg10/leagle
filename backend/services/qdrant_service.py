@@ -63,12 +63,17 @@ def get_qdrant_client() -> QdrantClient:
 
 
 def get_embedding_model() -> Any:
-    """Load embedding model once and reuse"""
+    """Load embedding model once and reuse.
+    
+    Uses fastembed (ONNX runtime) instead of sentence_transformers (PyTorch)
+    to keep memory well under 512 MB on Render's free tier.
+    """
     global _embedding_model
     if _embedding_model is None:
-        from sentence_transformers import SentenceTransformer
-        logger.info(f"Loading embedding model: {EMBEDDING_MODEL}")
-        _embedding_model = SentenceTransformer(EMBEDDING_MODEL)
+        from fastembed import TextEmbedding
+        logger.info(f"Loading fastembed embedding model: {EMBEDDING_MODEL}")
+        _embedding_model = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        logger.info("✅ fastembed model loaded")
     return _embedding_model
 
 
@@ -177,7 +182,8 @@ def embed_and_upsert(
     points = []
     
     for i, chunk in enumerate(chunks):
-        vector = model.encode(chunk).tolist()
+        # fastembed.embed() returns a generator of numpy arrays
+        vector = next(model.embed([chunk])).tolist()
         point_id = str(uuid.uuid4())
         
         payload = {
@@ -229,8 +235,8 @@ def semantic_search(
     model = get_embedding_model()
     client = get_qdrant_client()
     
-    # Embed query
-    query_vector = model.encode(query_text).tolist()
+    # Embed query — fastembed returns a generator, take the first element
+    query_vector = next(model.embed([query_text])).tolist()
     
     # Optional filter
     must_conditions = []

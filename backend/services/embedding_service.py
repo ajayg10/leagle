@@ -9,13 +9,17 @@ _model = None
 
 
 def get_model():
-    """Get or create embedding model with lazy initialization."""
+    """Get or create embedding model with lazy initialization.
+    
+    Uses fastembed (ONNX runtime, ~50MB) instead of sentence_transformers
+    (PyTorch, ~500MB) so the Render free tier doesn't OOM.
+    """
     global _model
     if _model is None:
-        from sentence_transformers import SentenceTransformer
-        logger.info("Loading SentenceTransformer model (all-MiniLM-L6-v2)...")
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
-        logger.info("✅ Embedding model loaded successfully")
+        from fastembed import TextEmbedding
+        logger.info("Loading fastembed model (all-MiniLM-L6-v2)...")
+        _model = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        logger.info("✅ fastembed model loaded successfully")
     return _model
 
 
@@ -56,8 +60,8 @@ def generate_embeddings(chunks: List[str], debug: bool = False) -> Dict:
             }
 
             try:
-                # Generate embeddings
-                embeddings = model.encode(batch_chunks, convert_to_tensor=False)
+                # fastembed.embed() returns a generator of numpy arrays
+                embeddings = np.array(list(model.embed(batch_chunks)))
 
                 # Convert numpy array to list of lists
                 if isinstance(embeddings, np.ndarray):
