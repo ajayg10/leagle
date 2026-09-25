@@ -28,11 +28,17 @@ api.interceptors.request.use(
     async (config) => {
         try {
             // window.Clerk is populated by ClerkProvider in the root layout.
-            // getToken() returns null when the user is signed out.
-            const token =
-                typeof window !== 'undefined' && window.Clerk?.session
-                    ? await window.Clerk.session.getToken()
-                    : null
+            let token = null
+            if (typeof window !== 'undefined') {
+                if (window.Clerk && !window.Clerk.loaded && typeof window.Clerk.load === 'function') {
+                    try {
+                        await window.Clerk.load()
+                    } catch (_) {}
+                }
+                if (window.Clerk?.session) {
+                    token = await window.Clerk.session.getToken()
+                }
+            }
 
             if (token) {
                 config.headers['Authorization'] = `Bearer ${token}`
@@ -55,11 +61,14 @@ api.interceptors.response.use(
         const status = error?.response?.status
 
         if (status === 401) {
+            if (error?.config?.skipAuthRedirect) {
+                return Promise.reject(error)
+            }
             // Session expired or never established — redirect to Clerk sign-in
-            // Skip redirect if already on an auth page to prevent infinite loops
+            // Skip redirect if already on an auth page or public pages to prevent infinite loops
             if (typeof window !== 'undefined') {
                 const path = window.location.pathname
-                if (!path.startsWith('/sign-in') && !path.startsWith('/sign-up') && path !== '/') {
+                if (!path.startsWith('/sign-in') && !path.startsWith('/sign-up') && path !== '/' && !path.startsWith('/pricing') && !path.startsWith('/solutions') && !path.startsWith('/enterprise')) {
                     const returnUrl = encodeURIComponent(path)
                     window.location.href = `/sign-in?redirect_url=${returnUrl}`
                 }

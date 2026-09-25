@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from services.analytics_service import AnalyticsService
 from services.qdrant_service import get_qdrant_client
 from core.config import settings
+from core.auth import get_current_user
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 import logging
 
@@ -13,7 +14,7 @@ class AnalyticsReport(BaseModel):
     document_id: str
     report: dict
 
-@router.post("/compare/{filename}", response_model=AnalyticsReport)
+@router.post("/compare/{filename}", response_model=AnalyticsReport, dependencies=[Depends(get_current_user)])
 async def compare_document(filename: str):
     """
     Triggers gap analysis for a previously uploaded document.

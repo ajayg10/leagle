@@ -127,7 +127,8 @@ app.include_router(impact.router, prefix="/api/impact", tags=["impact"], depende
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(rag.router, prefix="/api/rag", tags=["rag"], dependencies=_auth)
 app.include_router(upload.router, prefix="/api/ingest", tags=["ingest"], dependencies=_auth)
-app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"], dependencies=_auth)
+# analytics.router handles its own auth per route so /risk-heatmap is public
+app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 
 # WhatsApp webhook — Twilio signs its own requests; no Clerk JWT
 if settings.enable_whatsapp:

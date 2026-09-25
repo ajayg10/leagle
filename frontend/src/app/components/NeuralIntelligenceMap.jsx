@@ -79,10 +79,14 @@ export default function NeuralIntelligenceMap() {
 
         const fetchData = async () => {
             try {
-                const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
                 const resp = await fetch(`${API_BASE_URL}/api/analytics/risk-heatmap`)
-                const result = await resp.json()
-                setData(result)
+                if (resp.ok) {
+                    const result = await resp.json()
+                    if (result && result.heatmap) {
+                        setData(result)
+                    }
+                }
             } catch (err) {
                 console.error("Neural Map Sync Failed:", err)
             } finally {
@@ -95,21 +99,21 @@ export default function NeuralIntelligenceMap() {
     }, [])
 
     const globeData = useMemo(() => {
-        if (!data.heatmap) return []
+        if (!data?.heatmap) return []
         return Object.values(data.heatmap)
-            .filter(d => coords[d.id])
+            .filter(d => d?.id && coords[d.id])
             .map(d => ({
                 ...d,
                 lat: coords[d.id].lat,
                 lng: coords[d.id].lng,
                 color: d.color
             }))
-    }, [data.heatmap])
+    }, [data?.heatmap])
 
     const arcsData = useMemo(() => {
-        if (!data.connections) return []
+        if (!data?.connections) return []
         return data.connections
-            .filter(conn => coords[conn.startId] && coords[conn.endId])
+            .filter(conn => conn?.startId && conn?.endId && coords[conn.startId] && coords[conn.endId])
             .map(conn => ({
                 startLat: coords[conn.startId].lat,
                 startLng: coords[conn.startId].lng,
@@ -118,7 +122,7 @@ export default function NeuralIntelligenceMap() {
                 color: ['#0ea5e9', '#6366f1', '#22c55e'][Math.floor(Math.random() * 3)],
                 name: conn.label
             }))
-    }, [data.connections])
+    }, [data?.connections])
 
     const map2DToISO = (geo) => {
         const name = geo.properties.name
@@ -143,7 +147,8 @@ export default function NeuralIntelligenceMap() {
     }
 
     const handleCountryClick = (stats_id, fallback_name) => {
-        const backend_stats = data.heatmap[stats_id] || {}
+        if (!stats_id) return
+        const backend_stats = (data?.heatmap && data.heatmap[stats_id]) || {}
         const stats = {
             id: stats_id,
             name: backend_stats.name || fallback_name || stats_id || "Unknown Node",
@@ -207,8 +212,10 @@ export default function NeuralIntelligenceMap() {
                         polygonStrokeColor={() => 'rgba(255, 255, 255, 0.1)'}
                         polygonLabel={({ properties: d }) => `<b>${d.NAME}</b>`}
                         onPolygonClick={(poly) => {
-                            const iso = poly.properties.ISO_A2 || poly.properties.iso_a2
-                            handleCountryClick(iso, poly.properties.NAME)
+                            const iso = poly?.properties?.ISO_A2 || poly?.properties?.iso_a2
+                            if (iso && iso !== '-99') {
+                                handleCountryClick(iso, poly?.properties?.NAME)
+                            }
                         }}
 
                         pointsData={globeData}

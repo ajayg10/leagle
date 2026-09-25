@@ -9,7 +9,7 @@ export default function HeatmapPage() {
         <div className="relative h-[calc(100vh-100px)] overflow-hidden animate-in fade-in duration-1000 bg-black">
 
             {/* Background Texture */}
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
+            <div className="absolute inset-0 bg-radial-gradient opacity-[0.03] pointer-events-none" />
 
             {/* MINIMALIST HEADER: Top Center - Avoid Corner Collisions */}
             <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 text-center pointer-events-none">

@@ -31,7 +31,7 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-@router.get("/", dependencies=[Depends(get_current_user)])
+@router.get("/")
 async def get_alerts(db: AsyncSession = Depends(get_db), limit: int = 50):
     result = await db.execute(
         select(Alert).order_by(desc(Alert.sent_at)).limit(limit)
