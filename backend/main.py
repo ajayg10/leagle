@@ -80,9 +80,13 @@ if not _cors_origins:
     # Safe dev default
     _cors_origins = ["http://localhost:3000"]
 
+# Also allow all Vercel preview deployment URLs dynamically
+_cors_origin_regex = r"https://leagle.*\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    allow_origin_regex=_cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
