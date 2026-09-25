@@ -56,9 +56,13 @@ api.interceptors.response.use(
 
         if (status === 401) {
             // Session expired or never established — redirect to Clerk sign-in
+            // Skip redirect if already on an auth page to prevent infinite loops
             if (typeof window !== 'undefined') {
-                const returnUrl = encodeURIComponent(window.location.pathname)
-                window.location.href = `/sign-in?redirect_url=${returnUrl}`
+                const path = window.location.pathname
+                if (!path.startsWith('/sign-in') && !path.startsWith('/sign-up') && path !== '/') {
+                    const returnUrl = encodeURIComponent(path)
+                    window.location.href = `/sign-in?redirect_url=${returnUrl}`
+                }
             }
             return Promise.reject(new Error('Your session has expired. Redirecting to sign-in…'))
         }
