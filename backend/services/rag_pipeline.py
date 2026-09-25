@@ -204,9 +204,9 @@ async def rag_question_answer(question: str) -> dict:
         logger.error(f"LLM generation failed: {e}", exc_info=True)
         if chunks:
             summaries = "\n\n".join([f"- **{c.get('title', 'Precedent')}**: {c.get('text', '')[:250]}..." for c in chunks[:3]])
-            answer = f"### Regulatory Guidance (Precedent Index)\n\nRelevant regulatory articles and precedents were retrieved from the knowledge base:\n\n{summaries}\n\n*Note: Direct neural synthesis is currently operating in low-latency summary mode.*"
+            answer = f"### Regulatory Guidance (Precedents Found)\n\nRelevant regulatory articles and precedents were retrieved from the knowledge base:\n\n{summaries}\n\n*Note: Direct neural synthesis is currently operating in summary mode.*"
         else:
-            answer = f"### Regulatory Guidance\n\nNo direct precedents were retrieved matching this query. Please check your query or verify indexed regulations in the dashboard."
+            answer = f"### Regulatory Guidance\n\nNo direct precedents were retrieved matching this query. Please check your query or verify indexed regulations in the dashboard.\n\n*(Diagnostic: {type(e).__name__}: {str(e)})*"
 
     return {
         "answer": answer,

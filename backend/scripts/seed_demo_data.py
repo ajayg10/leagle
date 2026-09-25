@@ -135,6 +135,38 @@ DEMO_REGULATIONS = [
         "source": "PCI-DSS",
         "article": "v3.2.1",
     },
+    # Artificial Intelligence Governance
+    {
+        "title": "EU AI Act - High-Risk AI Systems Compliance & Governance",
+        "text": """
+        Under the EU Artificial Intelligence Act (Regulation 2024/1689), high-risk AI systems must satisfy mandatory requirements:
+        1. Risk Management System: Continuous identification, evaluation, and mitigation of risks to health, safety, and fundamental rights.
+        2. Data Governance: Training, validation, and testing datasets must be relevant, representative, error-free, and complete.
+        3. Technical Documentation: Detailed documentation must be drawn up before the system is placed on the market to prove compliance.
+        4. Record-Keeping & Logging: Automatic recording of events (logs) throughout the lifecycle to ensure traceability of algorithmic decisions.
+        5. Transparency & User Information: Clear instructions, technical limitations, and performance parameters provided to deployers.
+        6. Human Oversight: Systems must enable effective human-in-the-loop oversight to prevent or minimize operational hazards.
+        7. Accuracy, Robustness, and Cybersecurity: Systems must be resilient against cyber attacks, poisoning, and algorithmic drift.
+        """,
+        "category": "artificial_intelligence",
+        "jurisdiction": "EU",
+        "source": "EU AI Act",
+        "article": "Chapter III (Articles 8-15)",
+    },
+    {
+        "title": "EU AI Act - Transparency Obligations for Generative & Foundation Models",
+        "text": """
+        Providers of General Purpose AI (GPAI) and Generative AI models must comply with transparency rules:
+        1. AI-Generated Content Labeling: Outputs that constitute deep fakes, synthetic audio, or generated text must be marked in machine-readable format.
+        2. Copyright Compliance: Providers must put in place policies to respect Union copyright law and make publicly available summaries of training data.
+        3. Systemic Risk Evaluation: Foundation models with cumulative compute > 10^25 FLOPs must undergo model evaluation, adversarial testing, and incident reporting.
+        4. Downstream Disclosures: Clear technical documentation provided to downstream providers integrating the model into commercial workflows.
+        """,
+        "category": "artificial_intelligence",
+        "jurisdiction": "EU",
+        "source": "EU AI Act",
+        "article": "Articles 50-53",
+    },
 ]
 
 # Sample company policies for testing impact analysis

@@ -41,6 +41,37 @@ async def lifespan(app: FastAPI):
         await create_tables()
         await asyncio.to_thread(ensure_collection_exists)
         
+        # Check if database has any regulations; if 0, auto-seed curated dataset into DB & Qdrant
+        try:
+            from core.database import AsyncSessionLocal
+            from models.regulation import Regulation
+            from sqlalchemy import select, func
+            async with AsyncSessionLocal() as db:
+                count_res = await db.execute(select(func.count(Regulation.id)))
+                count = count_res.scalar() or 0
+                if count == 0:
+                    logger.info("🌱 Database has 0 regulations. Auto-seeding initial regulatory dataset into DB & Qdrant...")
+                    from services.ingestion import ingest_regulation
+                    from scripts.seed_demo_data import DEMO_REGULATIONS
+                    for r in DEMO_REGULATIONS:
+                        try:
+                            await ingest_regulation(
+                                db=db,
+                                title=r["title"],
+                                text=r["text"],
+                                source=r.get("source", "Standard"),
+                                category=r.get("category", "General"),
+                                jurisdiction=r.get("jurisdiction", "Global"),
+                            )
+                        except Exception as reg_err:
+                            logger.error(f"Failed to seed {r.get('title')}: {reg_err}")
+                    await db.commit()
+                    logger.info("✅ Auto-seeding completed.")
+                else:
+                    logger.info(f"📊 Database already initialized with {count} regulations.")
+        except Exception as e:
+            logger.error(f"Error during auto-seeding check: {e}")
+        
     asyncio.create_task(startup_tasks())
     
     # Export tokens for external libraries

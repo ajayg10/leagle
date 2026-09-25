@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import os
 from typing import List, Optional, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
@@ -55,14 +56,17 @@ class LLMFactory:
             )
 
         # Default: Gemini with Groq Fallback
-        if not LLMFactory.is_key_valid(settings.gemini_api_key):
-             logger.error("❌ Gemini API Key is missing or invalid.")
-             if target_provider == "gemini":
-                 raise ValueError("Gemini API Key not configured.")
+        gemini_key = settings.gemini_api_key or os.getenv("GEMINI_API_KEY", "")
+        groq_key = settings.groq_api_key or os.getenv("GROQ_API_KEY", "")
+
+        if not LLMFactory.is_key_valid(gemini_key):
+            logger.error(f"❌ Gemini API Key is missing or invalid (length={len(gemini_key)}).")
+            if target_provider == "gemini":
+                raise ValueError(f"Gemini API Key not configured (key_length={len(gemini_key)}). Please set GEMINI_API_KEY in Render environment.")
         
         gemini_primary = ChatGoogleGenerativeAI(
             model=settings.llm_model,
-            google_api_key=settings.gemini_api_key,
+            google_api_key=gemini_key,
             temperature=temperature,
             max_tokens=max_tokens,
             max_retries=1, 
@@ -73,18 +77,18 @@ class LLMFactory:
             fallbacks.append(
                 ChatGoogleGenerativeAI(
                     model="gemini-1.5-flash",
-                    google_api_key=settings.gemini_api_key,
+                    google_api_key=gemini_key,
                     temperature=temperature,
                     max_tokens=max_tokens,
                     max_retries=1,
                 )
             )
 
-        if LLMFactory.is_key_valid(settings.groq_api_key):
+        if LLMFactory.is_key_valid(groq_key):
             fallbacks.append(
                 ChatGroq(
                     model_name="llama-3.3-70b-versatile",
-                    groq_api_key=settings.groq_api_key,
+                    groq_api_key=groq_key,
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
