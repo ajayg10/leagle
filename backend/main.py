@@ -6,7 +6,8 @@ import os
 # Load environment variables from .env file
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.database import create_tables
@@ -91,6 +92,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {str(exc)}", "type": type(exc).__name__},
+    )
 
 from services.uk_legis_service import sync_uk_feed
 from services.sync_manager import sync_all_jurisdictions, sync_jurisdiction

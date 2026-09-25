@@ -60,25 +60,40 @@ class LLMFactory:
              if target_provider == "gemini":
                  raise ValueError("Gemini API Key not configured.")
         
-        gemini = ChatGoogleGenerativeAI(
+        gemini_primary = ChatGoogleGenerativeAI(
             model=settings.llm_model,
             google_api_key=settings.gemini_api_key,
             temperature=temperature,
             max_tokens=max_tokens,
-            max_retries=0, 
+            max_retries=1, 
         )
 
-        # Attach Groq as fallback if available
-        if LLMFactory.is_key_valid(settings.groq_api_key):
-            groq_fallback = ChatGroq(
-                model_name="llama-3.3-70b-versatile",
-                groq_api_key=settings.groq_api_key,
-                temperature=temperature,
-                max_tokens=max_tokens,
+        fallbacks = []
+        if settings.llm_model != "gemini-1.5-flash":
+            fallbacks.append(
+                ChatGoogleGenerativeAI(
+                    model="gemini-1.5-flash",
+                    google_api_key=settings.gemini_api_key,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    max_retries=1,
+                )
             )
-            return gemini.with_fallbacks([groq_fallback])
+
+        if LLMFactory.is_key_valid(settings.groq_api_key):
+            fallbacks.append(
+                ChatGroq(
+                    model_name="llama-3.3-70b-versatile",
+                    groq_api_key=settings.groq_api_key,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+            )
         
-        return gemini
+        if fallbacks:
+            return gemini_primary.with_fallbacks(fallbacks)
+        
+        return gemini_primary
 
     @staticmethod
     async def invoke_with_fallback(chain: Any, input_data: dict) -> Any:

@@ -41,6 +41,7 @@ COLLECTION_NAME = settings.qdrant_collection  # "regulations_v1"
 
 _qdrant_client: QdrantClient | None = None
 _embedding_model: Any | None = None
+_collection_verified: bool = False
 
 
 def get_qdrant_client() -> QdrantClient:
@@ -58,7 +59,7 @@ def get_qdrant_client() -> QdrantClient:
                 host=settings.qdrant_host,
                 port=settings.qdrant_port,
             )
-            logger.info(f"✅ Connected to local Qdrant at {settings.qdrant_host}:{settings.qdrant_port}")
+            logger.info(f"Connected to local Qdrant at {settings.qdrant_host}:{settings.qdrant_port}")
     return _qdrant_client
 
 
@@ -80,8 +81,12 @@ def get_embedding_model() -> Any:
 def ensure_collection_exists() -> None:
     """
     Create Qdrant collection if it doesn't exist.
-    This is idempotent - safe to call multiple times.
+    This is idempotent and cached - safe to call multiple times.
     """
+    global _collection_verified
+    if _collection_verified:
+        return
+
     client = get_qdrant_client()
     
     try:
@@ -103,26 +108,30 @@ def ensure_collection_exists() -> None:
             logger.info(f"✅ Collection '{COLLECTION_NAME}' already exists")
 
         # Create payload indexes for filtered fields (Required for Qdrant Cloud)
-        from qdrant_client.models import PayloadSchemaType
-        indexed_fields = ["filename", "source_type", "category", "jurisdiction"]
-        
-        # Get existing indexes to avoid duplicates
-        current_collection = client.get_collection(COLLECTION_NAME)
-        existing_indexes = current_collection.payload_schema.keys()
-        
-        for field in indexed_fields:
-            if field not in existing_indexes:
-                client.create_payload_index(
-                    collection_name=COLLECTION_NAME,
-                    field_name=field,
-                    field_schema=PayloadSchemaType.KEYWORD,
-                )
-                logger.info(f"✅ Created payload index for: {field}")
-            else:
-                logger.info(f"✅ Payload index for '{field}' already exists")
+        try:
+            from qdrant_client.models import PayloadSchemaType
+            indexed_fields = ["filename", "source_type", "category", "jurisdiction"]
+            
+            # Get existing indexes to avoid duplicates
+            current_collection = client.get_collection(COLLECTION_NAME)
+            existing_indexes = list(current_collection.payload_schema.keys()) if (current_collection and current_collection.payload_schema) else []
+            
+            for field in indexed_fields:
+                if field not in existing_indexes:
+                    client.create_payload_index(
+                        collection_name=COLLECTION_NAME,
+                        field_name=field,
+                        field_schema=PayloadSchemaType.KEYWORD,
+                    )
+                    logger.info(f"✅ Created payload index for: {field}")
+                else:
+                    logger.info(f"✅ Payload index for '{field}' already exists")
+        except Exception as idx_err:
+            logger.warning(f"Could not verify or create payload indexes: {idx_err}")
+
+        _collection_verified = True
     except Exception as e:
         logger.error(f"❌ Error ensuring collection exists: {e}")
-        raise
 
 
 def chunk_text(text: str, max_tokens: int = 1500) -> List[str]:
@@ -265,14 +274,14 @@ def semantic_search(
         {
             "id": hit.id,
             "score": hit.score,
-            "text": hit.payload.get("text", "")[:500],
-            "title": hit.payload.get("title", ""),
-            "category": hit.payload.get("category", ""),
-            "regulation_id": hit.payload.get("regulation_id", ""),
-            "policy_id": hit.payload.get("policy_id", ""),
-            "source_type": hit.payload.get("source_type", ""),
-            "jurisdiction": hit.payload.get("jurisdiction", "Global"),
-            "storage_path": hit.payload.get("storage_path"),
+            "text": (hit.payload or {}).get("text", "")[:500],
+            "title": (hit.payload or {}).get("title", ""),
+            "category": (hit.payload or {}).get("category", ""),
+            "regulation_id": (hit.payload or {}).get("regulation_id", ""),
+            "policy_id": (hit.payload or {}).get("policy_id", ""),
+            "source_type": (hit.payload or {}).get("source_type", ""),
+            "jurisdiction": (hit.payload or {}).get("jurisdiction", "Global"),
+            "storage_path": (hit.payload or {}).get("storage_path"),
         }
         for hit in results
     ]
