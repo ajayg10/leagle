@@ -57,7 +57,7 @@ engine = create_async_engine(
     max_overflow=10,
     pool_pre_ping=True,  # Detect stale connections
     pool_recycle=3600,  # Recycle connections every hour
-    connect_args={"timeout": 10},  # Prevent infinite hangs connecting
+    connect_args={"connect_timeout": 10},  # Prevent infinite hangs connecting
 )
 
 # Async session factory
