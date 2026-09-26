@@ -69,6 +69,30 @@ async def lifespan(app: FastAPI):
                     logger.info("✅ Auto-seeding completed.")
                 else:
                     logger.info(f"📊 Database already initialized with {count} regulations.")
+
+                # Check if database has any policies; if 0, auto-seed sample policies
+                from models.policy import Policy
+                pol_count_res = await db.execute(select(func.count(Policy.id)))
+                pol_count = pol_count_res.scalar() or 0
+                if pol_count == 0:
+                    logger.info("🌱 Database has 0 policies. Auto-seeding curated company policies into DB & Qdrant...")
+                    from services.ingestion import ingest_policy
+                    from scripts.seed_demo_data import SAMPLE_POLICIES
+                    for p in SAMPLE_POLICIES:
+                        try:
+                            await ingest_policy(
+                                db=db,
+                                title=p["title"],
+                                content=p["text"],
+                                department=p.get("department", "Compliance"),
+                                owner=p.get("owner", "Compliance Officer"),
+                            )
+                        except Exception as pol_err:
+                            logger.error(f"Failed to seed policy {p.get('title')}: {pol_err}")
+                    await db.commit()
+                    logger.info("✅ Policy auto-seeding completed.")
+                else:
+                    logger.info(f"📊 Database already initialized with {pol_count} policies.")
         except Exception as e:
             logger.error(f"Error during auto-seeding check: {e}")
         
