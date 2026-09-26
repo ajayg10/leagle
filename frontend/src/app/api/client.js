@@ -122,4 +122,12 @@ export const acknowledgeAlert = (id) => api.patch(`/alerts/${id}/acknowledge`)
 export const askQuestion = (question) =>
     api.post('/rag/explain', { question })
 
+// ── Ingestion & Analytics ──────────────────────────────────────────────────
+export const uploadIngestFile = (formData, debug = false) =>
+    api.post(`/ingest/upload${debug ? '?debug=true' : ''}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    })
+export const runDocumentAnalysis = (documentId) =>
+    api.post(`/analytics/compare/${encodeURIComponent(documentId)}`)
+
 export default api

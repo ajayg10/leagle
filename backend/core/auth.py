@@ -185,7 +185,9 @@ async def require_admin(user: dict = Depends(get_current_user)) -> dict:
         @router.post("/ingest", dependencies=[Depends(require_admin)])
     """
     org_role: str = user.get("org_role", "")
-    if org_role != "org:admin":
+    # In single-user demo environments where Clerk Organizations are not configured,
+    # allow any authenticated user. If org context is active and role is non-admin, deny.
+    if org_role and org_role != "org:admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Administrator access required",

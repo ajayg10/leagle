@@ -22,8 +22,12 @@ export default function ImpactAnalysis() {
                     getRegulations(),
                     getPolicies()
                 ])
-                setRegulations(regRes.data)
-                setPolicies(polRes.data)
+                const regs = regRes.data || []
+                const pols = polRes.data || []
+                setRegulations(regs)
+                setPolicies(pols)
+                if (regs.length > 0) setSelectedReg(regs[0])
+                if (pols.length > 0) setSelectedPolicy(pols[0])
             } catch (err) {
                 console.error("Failed to fetch data:", err)
                 setError("Failed to load regulations and policies. Please ensure the backend is running.")
@@ -140,20 +144,43 @@ export default function ImpactAnalysis() {
                 </div>
             </div>
 
-            {/* Run Button */}
-            <div className="flex justify-center">
+            {/* Status Guide Banner & Run Button */}
+            <div className="flex flex-col items-center gap-3">
+                {selectedReg && selectedPolicy ? (
+                    <div className="flex items-center gap-2 px-4 py-1.5 bg-leagle-accent/10 border border-leagle-accent/30 rounded-full text-leagle-accent text-[9px] sm:text-[10px] font-black uppercase tracking-widest animate-pulse">
+                        <CheckCircle2 size={13} />
+                        <span>Ready to analyze: {selectedReg.title.slice(0, 32)}... vs {selectedPolicy.title.slice(0, 32)}...</span>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2 px-4 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full text-amber-300 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
+                        <AlertTriangle size={13} />
+                        <span>
+                            {!selectedReg && !selectedPolicy
+                                ? "Select 1 Regulation on the left & 1 Policy on the right to unlock"
+                                : !selectedReg
+                                    ? "Select 1 Regulation on the left"
+                                    : "Select 1 Policy on the right"}
+                        </span>
+                    </div>
+                )}
+
                 <button
                     onClick={handleRunAnalysis}
                     disabled={!selectedReg || !selectedPolicy || loading}
                     className={`w-full sm:w-auto px-6 sm:px-12 py-4 rounded-sm font-black text-[9px] sm:text-[10px] tracking-[0.2em] uppercase transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-xl min-h-[48px] ${selectedReg && selectedPolicy && !loading
-                        ? 'bg-leagle-accent text-black hover:bg-white active:scale-95'
-                        : 'bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed'
+                        ? 'bg-leagle-accent text-black hover:bg-white active:scale-95 shadow-[0_0_25px_rgba(20,184,166,0.35)] ring-1 ring-leagle-accent'
+                        : 'bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed opacity-60'
                         }`}
                 >
                     {loading ? (
                         <>
                             <Loader2 className="animate-spin" size={16} />
                             Analyzing Friction...
+                        </>
+                    ) : !selectedReg || !selectedPolicy ? (
+                        <>
+                            <AlertTriangle size={16} />
+                            Select Regulation & Policy Above
                         </>
                     ) : (
                         <>

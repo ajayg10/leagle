@@ -138,10 +138,19 @@ async def analyze_impact(
         )
 
         clean = raw_response.strip()
-        if clean.startswith("```"):
-            clean = clean.split("```")[1]
-            if clean.startswith("json"):
-                clean = clean[4:]
+        if "```" in clean:
+            parts = clean.split("```")
+            for part in parts:
+                p = part.strip()
+                if p.startswith("json"):
+                    p = p[4:].strip()
+                if p.startswith("{") and p.endswith("}"):
+                    clean = p
+                    break
+        start_idx = clean.find("{")
+        end_idx = clean.rfind("}")
+        if start_idx != -1 and end_idx != -1:
+            clean = clean[start_idx : end_idx + 1]
 
         result = json.loads(clean)
         result["source_chunks"] = [c["text"][:200] for c in similar_chunks]

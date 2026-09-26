@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Upload, FileText, ShieldAlert, Zap, ArrowRight, Info, CheckCircle2 } from 'lucide-react'
+import { uploadIngestFile, runDocumentAnalysis } from '../api/client'
 
 export default function Ingest() {
   const [file, setFile] = useState(null);
@@ -32,25 +33,11 @@ export default function Ingest() {
     formData.append("file", file);
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const url = debug
-        ? `${API_BASE_URL}/api/ingest/upload?debug=true`
-        : `${API_BASE_URL}/api/ingest/upload`;
-
-      const res = await fetch(url, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      setResult(data);
+      const res = await uploadIngestFile(formData, debug);
+      setResult(res.data);
     } catch (err) {
-      setError(err.message || "Unknown error occurred");
+      const msg = err?.response?.data?.detail || err.message || "Unknown error occurred";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -63,17 +50,11 @@ export default function Ingest() {
     setAnalysisReport(null);
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      const res = await fetch(`${API_BASE_URL}/api/analytics/compare/${result.document_id}`, {
-        method: "POST",
-      });
-
-      if (!res.ok) throw new Error("Analysis failed");
-
-      const data = await res.json();
-      setAnalysisReport(data.report);
+      const res = await runDocumentAnalysis(result.document_id);
+      setAnalysisReport(res.data.report);
     } catch (err) {
-      setError(`Analysis Error: ${err.message}`);
+      const msg = err?.response?.data?.detail || err.message || "Unknown analysis error";
+      setError(`Analysis Error: ${msg}`);
     } finally {
       setAnalysisLoading(false);
     }

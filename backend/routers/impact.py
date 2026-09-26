@@ -9,6 +9,9 @@ from services.rag_pipeline import analyze_impact
 
 router = APIRouter()
 
+import uuid
+from uuid import UUID
+
 @router.post("/analyze")
 async def analyze_regulation_impact(
     regulation_id: str,
@@ -16,12 +19,22 @@ async def analyze_regulation_impact(
     db: AsyncSession = Depends(get_db),
 ):
     """Full RAG impact analysis between a regulation and a policy."""
-    reg_result = await db.execute(select(Regulation).where(Regulation.id == regulation_id))
+    try:
+        reg_uuid = UUID(str(regulation_id).strip())
+    except (ValueError, TypeError):
+        raise HTTPException(400, f"Invalid regulation_id: '{regulation_id}' is not a valid UUID")
+
+    try:
+        pol_uuid = UUID(str(policy_id).strip())
+    except (ValueError, TypeError):
+        raise HTTPException(400, f"Invalid policy_id: '{policy_id}' is not a valid UUID")
+
+    reg_result = await db.execute(select(Regulation).where(Regulation.id == reg_uuid))
     regulation = reg_result.scalar_one_or_none()
     if not regulation:
         raise HTTPException(404, "Regulation not found")
 
-    pol_result = await db.execute(select(Policy).where(Policy.id == policy_id))
+    pol_result = await db.execute(select(Policy).where(Policy.id == pol_uuid))
     policy = pol_result.scalar_one_or_none()
     if not policy:
         raise HTTPException(404, "Policy not found")
@@ -33,17 +46,29 @@ async def analyze_regulation_impact(
         policy_title=policy.title,
     )
 
-    # Update the impact mapping with LLM summary
+    # Update or create the impact mapping with LLM summary
     mapping_result = await db.execute(
         select(ImpactMapping).where(
-            ImpactMapping.regulation_id == regulation_id,
-            ImpactMapping.policy_id == policy_id,
+            ImpactMapping.regulation_id == reg_uuid,
+            ImpactMapping.policy_id == pol_uuid,
         )
     )
     mapping = mapping_result.scalar_one_or_none()
     if mapping:
         mapping.impact_level = analysis.get("impact_level", mapping.impact_level)
         mapping.llm_summary = analysis.get("reasoning", "")
+        mapping.reasoning = analysis.get("reasoning", "")
+        await db.commit()
+    else:
+        new_mapping = ImpactMapping(
+            regulation_id=reg_uuid,
+            policy_id=pol_uuid,
+            impact_level=analysis.get("impact_level", "MEDIUM"),
+            llm_summary=analysis.get("reasoning", ""),
+            reasoning=analysis.get("reasoning", ""),
+            status="OPEN",
+        )
+        db.add(new_mapping)
         await db.commit()
 
     return analysis

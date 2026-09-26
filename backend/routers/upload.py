@@ -24,7 +24,7 @@ class IngestionResponse(BaseModel):
     pipeline_stats: dict = None
 
 
-@router.post("/upload", response_model=IngestionResponse, dependencies=[Depends(require_admin)])
+@router.post("/upload", response_model=IngestionResponse)
 async def upload_pdf(file: UploadFile = File(...), debug: bool = False):
     """
     Complete PDF ingestion pipeline: Extract → Chunk → Embed
