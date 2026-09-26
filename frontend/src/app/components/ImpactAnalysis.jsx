@@ -50,7 +50,8 @@ export default function ImpactAnalysis() {
             setResult(res.data)
         } catch (err) {
             console.error("Impact Analysis failed:", err)
-            setError("Analysis failed. This usually happens if the LLM provider is busy or the document content is missing.")
+            const detail = err?.response?.data?.detail || err.message || "Analysis request failed. Please check network/backend connection."
+            setError(`Analysis Notice: ${detail}`)
         } finally {
             setLoading(false)
         }
